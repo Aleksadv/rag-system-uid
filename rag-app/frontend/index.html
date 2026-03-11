@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>RAG MVP</title>
+</head>
+
+<body>
+<h1>RAG MVP</h1>
+
+<button onclick="check()">Check backend</button>
+
+<pre id="result"></pre>
+
+<script>
+async function check() {
+    const r = await fetch('/api/ping')
+    const j = await r.json()
+    document.getElementById('result').textContent =
+        JSON.stringify(j, null, 2)
+}
+</script>
+
+</body>
+</html>
