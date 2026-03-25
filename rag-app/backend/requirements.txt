@@ -1,4 +1,9 @@
 fastapi
 uvicorn
-psycopg[binary]
-sqlalchemy
+psycopg2-binary
+pgvector
+sentence-transformers
+transformers
+torch
+numpy
+tqdm

@@ -1,39 +1,81 @@
+volumes:
+  postgres_data:
+  backend_cache:  
+
 services:
-  nginx:
-    build: ./nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - frontend
-      - backend
+
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - ragnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      TRANSFORMERS_CACHE: /models/cache
+    volumes:
+      - backend_cache:/models/cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ragnet
+
+  bootstrapper:
+    build: ./backend
+
+    command: >
+      sh -c "
+        echo REBUILD_EMBEDDINGS=$$REBUILD_EMBEDDINGS &&
+        python -m app.bootstrapper
+      "
+
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REBUILD_EMBEDDINGS: ${REBUILD_EMBEDDINGS}
+      PDF_PATH: /app/sources
+
+    volumes:
+      - ./sources:/app/sources
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - ragnet
+
 
   frontend:
     build: ./frontend
     networks:
       - ragnet
 
-  backend:
-    build: ./backend
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ragdb
+
+  nginx:
+    build: ./nginx
+    ports:
+    - "8080:80"
+    - "8443:443"
     depends_on:
-      - postgresql
+      - backend
+      - frontend
     networks:
       - ragnet
 
-  postgresql:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ragdb
-    volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - ragnet
 
 networks:
   ragnet:
