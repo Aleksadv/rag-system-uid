@@ -16,6 +16,9 @@
 
 Все сервисы работают в одной сети `ragnet`.
 
+## Диаграмма архитектуры
+![Схема архитектуры RAG-системы](sources/architecture.png)
+
 ## 3. Компоненты и их взаимодействие
 
 ### 3.1 PostgreSQL (pgvector)
@@ -160,6 +163,7 @@ sed -i 's/\r$//' entrypoint.sh
 ```
 .
 ├── .env
+├── parsing.py
 ├── docker-compose.yml
 ├── backend/
 │   ├── Dockerfile
