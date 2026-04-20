@@ -1,20 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-
-<!--  рамка для кнопки отправить-->
-  <style>
-  #submitBtn {
-    border: 3px solid #8D407B;
-    border-radius: 12px;
-    padding: 10px 20px;      /* добавит воздух внутри */
-    background-color: #4a3340; /* для контраста */
-    cursor: pointer;
-  }
-  </style>
-
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RAG-ассистент</title>
   <style>
     * {
@@ -32,7 +20,7 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 700px;
       margin: 20px auto;
       background: #31222b;
       border: 1px solid #4a3340;
@@ -41,23 +29,108 @@
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     }
 
-    h1 {
+    .tabs {
+      display: flex;
+      gap: 12px;
       margin-bottom: 20px;
-      color: #f1edf0;
-      font-size: 1.6rem;
-      text-align: center;
+      border-bottom: 1px solid #4a3340;
+      padding-bottom: 8px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
       font-weight: 600;
+      color: #a89aa4;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 20px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: #8D4071;
+      color: white;
+      box-shadow: 0 2px 8px rgba(141, 64, 113, 0.4);
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active-panel {
+      display: block;
+    }
+
+    /* Стили для ассистента */
+    .chat-history {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      padding-right: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chat-message {
+      background: #21161c;
+      border-radius: 16px;
+      padding: 12px 16px;
+      border-left: 3px solid #8D4071;
+    }
+
+    .chat-question {
+      font-weight: 600;
+      color: #e7e2e5;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+
+    .chat-answer {
+      color: #c4b5c0;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+      justify-content: center;
+    }
+
+    button {
+      background: #3a1424;
+      color: #ffffff;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #522033;
+    }
+
+    button:disabled {
+      background: #6f6670;
+      cursor: not-allowed;
+    }
+
+    .clear-btn {
+      background: #2c1a24;
+      font-size: 1.3rem;
+      padding: 8px 18px;
     }
 
     .form-group {
       margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: #ffffff;
     }
 
     textarea {
@@ -68,19 +141,13 @@
       background: #21161c;
       color: #e7e2e5;
       font-size: 1rem;
-      min-height: 140px;
+      min-height: 100px;
       resize: vertical;
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    }
-
-    textarea::placeholder {
-      color: #8f7f89;
     }
 
     textarea:focus {
       outline: none;
       border-color: #8D4071;
-      box-shadow: 0 0 0 3px rgba(154, 111, 132, 0.18);
       background: #25181f;
     }
 
@@ -91,61 +158,15 @@
       text-align: right;
     }
 
-    button {
-      display: block;
-      background: #3a1424;
-      color: #ffffff;
-      border: none;
-      margin: 18px auto 0;
-      padding: 12px 18px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      width: 50%;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 6px 18px rgba(58, 20, 36, 0.35);
-    }
-
-    button:hover {
-      background: #522033;
-      transform: translateY(-1px);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      background: #6f6670;
-      color: #d7d1d5;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .answer-box {
-      margin-top: 24px;
-      padding: 16px;
-      background: #19070f;
-      border: 1px solid #8D4071;
-      border-radius: 14px;
+    .loading {
+      text-align: center;
+      color: #a89aa4;
+      margin-top: 14px;
       display: none;
     }
 
-    .answer-box.visible {
+    .loading.visible {
       display: block;
-    }
-
-    .answer-label {
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #ffffff;
-    }
-
-    .answer-text {
-      white-space: pre-wrap;
-      color: #e4dfe2;
     }
 
     .error {
@@ -162,105 +183,368 @@
       display: block;
     }
 
-    .loading {
-      text-align: center;
-      color: #a89aa4;
-      margin-top: 14px;
-      display: none;
+    /* Стили для тренажёра */
+    .trainer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+    }
+    .question-counter {
+      background: #21161c;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: #e7e2e5;
+    }
+    .question-text {
+      background: #21161c;
+      padding: 16px;
+      border-radius: 16px;
+      margin: 16px 0;
+      font-size: 1.1rem;
+      border-left: 4px solid #8D4071;
+    }
+    .trainer-input {
+      width: 100%;
+      padding: 12px;
+      background: #21161c;
+      border: 1px solid #8D4071;
+      border-radius: 12px;
+      color: white;
+      margin-top: 8px;
+      margin-bottom: 20px;
+    }
+    .result-area {
+      margin-top: 20px;
+      padding: 12px;
+      background: #19070f;
+      border-radius: 12px;
+    }
+    .explanation {
+      margin-top: 10px;
+      font-style: italic;
+      color: #d4b8c8;
+    }
+    .trainer-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .trainer-buttons button {
+      flex: 1;
+      margin: 0;
     }
 
-    .loading.visible {
-      display: block;
+    /* Розовая окантовка для всех кнопок, кроме clear-btn (уже есть) */
+    #submitBtn, #checkBtn, #navPrevBtn, #navNextBtn, .clear-btn {
+      border: 2px solid #ff69b4;
+      transition: border-color 0.2s;
+    }
+    #submitBtn:hover, #checkBtn:hover, #navPrevBtn:hover, #navNextBtn:hover, .clear-btn:hover {
+      border-color: #ff1493;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Ассистент</h1>
-
-    <form id="questionForm">
-      <div class="form-group">
-        <label for="question"></label>
-        <textarea
-          id="question"
-          name="question"
-          required
-          minlength="1"
-          maxlength="1000"
-          placeholder="Ваш вопрос..."></textarea>
-        <div class="hint"><span id="charCount">0</span>/1000</div>
-      </div>
-
-      <button type="submit" id="submitBtn">Отправить</button>
-    </form>
-
-    <div class="loading" id="loading">Думаю...</div>
-    <div class="error" id="error"></div>
-
-    <div class="answer-box" id="answerBox">
-      <div class="answer-label">Ответ:</div>
-      <div class="answer-text" id="answerText"></div>
-    </div>
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="assistant">Ассистент</button>
+    <button class="tab-btn" data-tab="trainer">Тренажёр</button>
   </div>
 
-  <script>
-    const form = document.getElementById('questionForm');
-    const questionInput = document.getElementById('question');
-    const charCount = document.getElementById('charCount');
-    const submitBtn = document.getElementById('submitBtn');
-    const loading = document.getElementById('loading');
-    const errorBox = document.getElementById('error');
-    const answerBox = document.getElementById('answerBox');
-    const answerText = document.getElementById('answerText');
+  <!-- Панель ассистента -->
+  <div id="assistantPanel" class="panel active-panel">
+    <div id="chatHistory" class="chat-history"></div>
+    <form id="questionForm">
+      <div class="form-group">
+        <textarea id="question" name="question" required minlength="1" maxlength="1000" placeholder="Ваш вопрос..."></textarea>
+        <div class="hint"><span id="charCount">0</span>/1000</div>
+      </div>
+      <div class="button-row">
+        <button type="submit" id="submitBtn">Отправить</button>
+        <button type="button" id="clearHistoryBtn" class="clear-btn" title="Очистить историю">🗑️</button>
+      </div>
+    </form>
+    <div class="loading" id="loading">Думаю...</div>
+    <div class="error" id="error"></div>
+  </div>
 
-    questionInput.addEventListener('input', () => {
-      charCount.textContent = questionInput.value.length;
+  <!-- Панель тренажёра -->
+  <div id="trainerPanel" class="panel">
+    <div class="trainer-header">
+      <div class="question-counter" id="questionCounter">Вопрос: 0 / 0</div>
+    </div>
+    <div id="trainerQuestionArea">
+      <div class="question-text" id="currentQuestion">Загрузка вопроса...</div>
+      <input type="text" id="trainerAnswer" class="trainer-input" placeholder="Ваш ответ..." autocomplete="off">
+      <div id="trainerResult" class="result-area" style="display: none;"></div>
+      <div class="trainer-buttons">
+        <button id="navPrevBtn" disabled>Предыдущий вопрос</button>
+        <button id="checkBtn">Проверить</button>
+        <button id="navNextBtn">Следующий вопрос</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Переключение панелей ----------
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const panels = {
+    assistant: document.getElementById('assistantPanel'),
+    trainer: document.getElementById('trainerPanel')
+  };
+
+  function switchTab(tabId) {
+    Object.keys(panels).forEach(id => {
+      panels[id].classList.remove('active-panel');
     });
+    panels[tabId].classList.add('active-panel');
+    tabBtns.forEach(btn => {
+      if (btn.dataset.tab === tabId) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+  }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
 
-      errorBox.classList.remove('visible');
-      answerBox.classList.remove('visible');
-      loading.classList.add('visible');
-      submitBtn.disabled = true;
+  // ---------- История чата ассистента ----------
+  let chatHistory = [];
 
-      const payload = {
-        question: questionInput.value.trim()
-      };
-
+  function loadChatHistory() {
+    const saved = localStorage.getItem('assistantChatHistory');
+    if (saved) {
       try {
-        const response = await fetch('/api/question', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        chatHistory = JSON.parse(saved);
+      } catch(e) { chatHistory = []; }
+    }
+    renderChatHistory();
+  }
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.detail || `Ошибка ${response.status}`);
-        }
+  function saveChatHistory() {
+    localStorage.setItem('assistantChatHistory', JSON.stringify(chatHistory));
+  }
 
-        const data = await response.json();
-        const parts = [];
+  function renderChatHistory() {
+    const container = document.getElementById('chatHistory');
+    if (!container) return;
+    if (chatHistory.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    const html = chatHistory.map(item => `
+      <div class="chat-message">
+        <div class="chat-question">❓ ${escapeHtml(item.question)}</div>
+        <div class="chat-answer">📖 ${escapeHtml(item.answer)}</div>
+      </div>
+    `).join('');
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+  }
 
-        if (data.short?.length) parts.push('Кратко:\n' + data.short.join('\n'));
-        if (data.long?.length) parts.push('Подробнее:\n' + data.long.join('\n'));
+  function addToHistory(question, answer) {
+    chatHistory.push({ question: question, answer: answer });
+    saveChatHistory();
+    renderChatHistory();
+  }
 
-        answerText.textContent = parts.join('\n\n') || 'Нет ответа';
-        answerBox.classList.add('visible');
-        questionInput.value = '';
-        charCount.textContent = '0';
+  function clearHistory() {
+    chatHistory = [];
+    saveChatHistory();
+    renderChatHistory();
+  }
 
-      } catch (err) {
-        errorBox.textContent = ` ${err.message}`;
-        errorBox.classList.add('visible');
-        console.error('Request failed:', err);
-      } finally {
-        loading.classList.remove('visible');
-        submitBtn.disabled = false;
-      }
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
     });
-  </script>
+  }
+
+  // ---------- Логика ассистента ----------
+  const form = document.getElementById('questionForm');
+  const questionInput = document.getElementById('question');
+  const charCount = document.getElementById('charCount');
+  const submitBtn = document.getElementById('submitBtn');
+  const loading = document.getElementById('loading');
+  const errorBox = document.getElementById('error');
+
+  questionInput.addEventListener('input', () => {
+    charCount.textContent = questionInput.value.length;
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const questionText = questionInput.value.trim();
+    if (!questionText) return;
+
+    errorBox.classList.remove('visible');
+    loading.classList.add('visible');
+    submitBtn.disabled = true;
+
+    try {
+      const response = await fetch('/api/question', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: questionText })
+      });
+      if (!response.ok) throw new Error(`Ошибка ${response.status}`);
+      const data = await response.json();
+      let answerText = '';
+      if (data.short?.length) answerText += 'Кратко:\n' + data.short.join('\n');
+      if (data.long?.length) {
+        if (answerText) answerText += '\n\n';
+        answerText += 'Подробнее:\n' + data.long.join('\n');
+      }
+      if (!answerText) answerText = 'Нет ответа';
+      
+      addToHistory(questionText, answerText);
+      questionInput.value = '';
+      charCount.textContent = '0';
+    } catch (err) {
+      errorBox.textContent = ` ${err.message}`;
+      errorBox.classList.add('visible');
+    } finally {
+      loading.classList.remove('visible');
+      submitBtn.disabled = false;
+    }
+  });
+
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  if (clearHistoryBtn) clearHistoryBtn.addEventListener('click', clearHistory);
+  loadChatHistory();
+
+  // ---------- Логика тренажёра с историей вопросов ----------
+  let historyQuestions = [];
+  let currentHistoryIndex = -1;
+  let isWaitingForNewQuestion = false;
+
+  const questionCounterSpan = document.getElementById('questionCounter');
+  const currentQuestionDiv = document.getElementById('currentQuestion');
+  const trainerAnswer = document.getElementById('trainerAnswer');
+  const checkBtn = document.getElementById('checkBtn');
+  const navPrevBtn = document.getElementById('navPrevBtn');
+  const navNextBtn = document.getElementById('navNextBtn');
+  const trainerResultDiv = document.getElementById('trainerResult');
+  let currentQuestionId = null;
+
+  function updateUI() {
+    if (historyQuestions.length === 0) {
+      questionCounterSpan.textContent = 'Вопрос: 0 / 0';
+      navPrevBtn.disabled = true;
+      navNextBtn.disabled = false;
+      return;
+    }
+    const currentNum = currentHistoryIndex + 1;
+    const total = historyQuestions.length;
+    questionCounterSpan.textContent = `Вопрос: ${currentNum} / ${total}`;
+    navPrevBtn.disabled = (currentHistoryIndex <= 0);
+    navNextBtn.disabled = false;
+  }
+
+  async function addRandomQuestion() {
+    if (isWaitingForNewQuestion) return;
+    isWaitingForNewQuestion = true;
+    try {
+      const response = await fetch('/api/trainer/question');
+      if (!response.ok) throw new Error('Не удалось загрузить вопрос');
+      const data = await response.json();
+      const newQuestion = { id: data.id, questionText: data.question };
+      historyQuestions.push(newQuestion);
+      currentHistoryIndex = historyQuestions.length - 1;
+      currentQuestionDiv.textContent = newQuestion.questionText;
+      currentQuestionId = newQuestion.id;
+      trainerAnswer.value = '';
+      trainerResultDiv.style.display = 'none';
+      trainerResultDiv.innerHTML = '';
+      checkBtn.disabled = false;
+      updateUI();
+    } catch (err) {
+      currentQuestionDiv.textContent = 'Ошибка загрузки вопроса. Попробуйте позже.';
+      console.error(err);
+    } finally {
+      isWaitingForNewQuestion = false;
+    }
+  }
+
+  function goToHistoryIndex(index) {
+    if (index < 0 || index >= historyQuestions.length) return;
+    currentHistoryIndex = index;
+    const q = historyQuestions[currentHistoryIndex];
+    currentQuestionDiv.textContent = q.questionText;
+    currentQuestionId = q.id;
+    trainerAnswer.value = '';
+    trainerResultDiv.style.display = 'none';
+    trainerResultDiv.innerHTML = '';
+    checkBtn.disabled = false;
+    updateUI();
+  }
+
+  async function onNextQuestion() {
+    if (currentHistoryIndex + 1 < historyQuestions.length) {
+      goToHistoryIndex(currentHistoryIndex + 1);
+    } else {
+      await addRandomQuestion();
+    }
+  }
+
+  function onPrevQuestion() {
+    if (currentHistoryIndex > 0) {
+      goToHistoryIndex(currentHistoryIndex - 1);
+    }
+  }
+
+  async function checkAnswer() {
+    const answer = trainerAnswer.value.trim();
+    if (!answer) {
+      alert('Введите ответ');
+      return;
+    }
+    checkBtn.disabled = true;
+    try {
+      const response = await fetch('/api/trainer/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question_id: currentQuestionId, answer: answer })
+      });
+      if (!response.ok) throw new Error('Ошибка проверки');
+      const data = await response.json();
+      let statusHtml = '';
+      if (data.status === 'Верно') {
+        statusHtml = '<span style="color:#8bc34a;">✓ Верно!</span>';
+      } else if (data.status === 'Верно частично') {
+        statusHtml = '<span style="color:#ffb74d;">⚠️ Верно частично</span>';
+      } else {
+        statusHtml = '<span style="color:#e57373;">✗ Неверно</span>';
+      }
+      let explanationHtml = '';
+      if (data.explanation && data.status !== 'Верно') {
+        explanationHtml = `<div class="explanation"><strong>Эталонный ответ:</strong><br>${escapeHtml(data.explanation)}</div>`;
+      }
+      trainerResultDiv.innerHTML = `<div>${statusHtml}</div>${explanationHtml}`;
+      trainerResultDiv.style.display = 'block';
+    } catch (err) {
+      trainerResultDiv.innerHTML = `<div class="error" style="display:block;">Ошибка: ${err.message}</div>`;
+      trainerResultDiv.style.display = 'block';
+    } finally {
+      checkBtn.disabled = false;
+    }
+  }
+
+  async function initTrainer() {
+    await addRandomQuestion();
+  }
+
+  checkBtn.addEventListener('click', checkAnswer);
+  navNextBtn.addEventListener('click', onNextQuestion);
+  navPrevBtn.addEventListener('click', onPrevQuestion);
+  initTrainer();
+</script>
 </body>
 </html>
