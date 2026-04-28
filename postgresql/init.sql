@@ -1,0 +1,36 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS documents_short (
+    id SERIAL PRIMARY KEY,
+    content TEXT,
+    embedding vector(768)
+);
+
+CREATE INDEX IF NOT EXISTS documents_short_embedding_idx
+ON documents_short
+USING ivfflat (embedding vector_cosine_ops);
+
+CREATE TABLE IF NOT EXISTS documents_long (
+    id SERIAL PRIMARY KEY,
+    content TEXT,
+    embedding vector(768)
+);
+
+CREATE INDEX IF NOT EXISTS documents_long_embedding_idx
+ON documents_long
+USING ivfflat (embedding vector_cosine_ops);
+
+
+
+-- Таблица для тренажера (вопросы-определения)
+CREATE TABLE IF NOT EXISTS questions (
+    id SERIAL PRIMARY KEY,
+    question_text TEXT NOT NULL,      -- текст вопроса (например, "Что такое X?")
+    answer_text TEXT NOT NULL,        -- эталонный ответ (предложение из учебника)
+    embedding vector(768)             -- эмбеддинг эталона (passage:)
+);
+
+-- Индекс для быстрого поиска по эмбеддингу (по желанию, для масштабирования)
+CREATE INDEX IF NOT EXISTS questions_embedding_idx
+ON questions
+USING ivfflat (embedding vector_cosine_ops);
