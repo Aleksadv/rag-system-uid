@@ -12,9 +12,9 @@ from sentence_transformers import CrossEncoder
 from app.schemas.users import UserIn, UserOut
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-TOP_K_SHORT = 3
-TOP_K_LONG = 3
-FETCH_K = 25
+TOP_K_SHORT = 1
+TOP_K_LONG = 2
+FETCH_K = 40
 MIN_VECTOR_SIMILARITY = 0.72
 MIN_LEXICAL_OVERLAP = 0.15
 
@@ -106,17 +106,48 @@ def lexical_bonus(query: str, text: str) -> float:
     return len(q_tokens & t_tokens) / len(q_tokens)
 
 
-def dedupe_rows(rows, limit: int):
+def section_key(text: str) -> str:
+    match = re.match(r"^(\d+(?:\.\d+)+\.?\s+.*?\(\d+/\d+\))", text)
+    if match:
+        return match.group(1).lower().replace("ё", "е")
+
+    match = re.match(r"^(\d+(?:\.\d+)+\.?\s+[^.]{3,120})", text)
+    if match:
+        return match.group(1).lower().replace("ё", "е")
+
+    return re.sub(r"\W+", " ", text.lower().replace("ё", "е"))[:120]
+
+
+def jaccard_similarity(a: str, b: str) -> float:
+    a_tokens = lexical_tokens(a)
+    b_tokens = lexical_tokens(b)
+
+    if not a_tokens or not b_tokens:
+        return 0.0
+
+    return len(a_tokens & b_tokens) / len(a_tokens | b_tokens)
+
+
+def dedupe_rows(rows, limit: int, max_per_section: int = 1):
     result = []
-    seen = set()
+    seen_exact = set()
+    section_counts = {}
 
     for _, content, distance in rows:
-        key = re.sub(r"\W+", " ", content.lower().replace("ё", "е"))[:220]
+        exact_key = re.sub(r"\W+", " ", content.lower().replace("ё", "е"))[:260]
+        sec_key = section_key(content)
 
-        if key in seen:
+        if exact_key in seen_exact:
             continue
 
-        seen.add(key)
+        if section_counts.get(sec_key, 0) >= max_per_section:
+            continue
+
+        if any(jaccard_similarity(content, existing) > 0.62 for existing in result):
+            continue
+
+        seen_exact.add(exact_key)
+        section_counts[sec_key] = section_counts.get(sec_key, 0) + 1
         result.append(content)
 
         if len(result) >= limit:
@@ -124,8 +155,7 @@ def dedupe_rows(rows, limit: int):
 
     return result
 
-
-def rerank(query: str, rows, limit: int):
+def rerank(query: str, rows, limit: int, max_per_section: int = 1):
     scored = []
 
     for row in rows:
@@ -150,7 +180,7 @@ def rerank(query: str, rows, limit: int):
         scored.append((score, content, distance))
 
     scored.sort(key=lambda x: x[0])
-    return dedupe_rows(scored, limit)
+    return dedupe_rows(scored, limit, max_per_section=max_per_section)
 
 app = FastAPI()
 
@@ -237,11 +267,20 @@ def search(q: UserIn):
         FETCH_K,
     )
 
-    # Сначала дешёвый фильтр: threshold + lexical + definition boost.
-    short_candidates = rerank(q.question, short_rows, FETCH_K)
-    long_candidates = rerank(q.question, long_rows, FETCH_K)
+    short_candidates = rerank(
+        q.question,
+        short_rows,
+        FETCH_K,
+        max_per_section=1,
+    )
 
-    # Потом дорогой, но более точный CrossEncoder-rerank.
+    long_candidates = rerank(
+        q.question,
+        long_rows,
+        FETCH_K,
+        max_per_section=2,
+    )
+
     short = cross_rerank(q.question, short_candidates, TOP_K_SHORT)
     long = cross_rerank(q.question, long_candidates, TOP_K_LONG)
 
